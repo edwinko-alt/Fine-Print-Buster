@@ -82,7 +82,7 @@ def send_message(state: State, user_message: str) -> Page:
     user_msg = LLMMessage("user", initialize_prompt + "\n" + user_message)
     state.conversation.append(user_msg)
 
-    result = call_gemini(state.conversation)
+    result = call_gemini(state.conversation, max_tokens=7000)
 
     # Handle the result
     if isinstance(result, LLMResponse):
@@ -93,8 +93,6 @@ def send_message(state: State, user_message: str) -> Page:
         # Error occurred
         error_msg = LLMMessage("assistant", f"Error: {result.message}")
         state.conversation.append(error_msg)
-        while not isinstance(result, LLMResponse):
-            result = call_gemini(state.conversation)
     return show_chat(state)
 
 @route
