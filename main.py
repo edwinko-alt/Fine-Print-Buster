@@ -3,18 +3,17 @@ from drafter import *
 from dataclasses import dataclass
 from drafter.llm import *
 
-#import requests
-
 set_site_information(
     author="edwinko@udel.edu",
     description="Breaks down large walls of text in terms and conditions into easy to understand summaries " \
-    "highlighting privacy concerns and red flags.",
+    "highlighting privacy concerns and red flags. Next steps: improve consistency of API calls and add the " \
+    "option to search for website terms and conditions directly from the app.",
     sources="Google Gemini API", 
     planning= "",
     links=["https://github.com/edwinko-alt/Fine-Print-Buster"]
 )
 
-#set_gemini_server("https://drafter-gemini-proxy.edwinko.workers.dev/")
+set_gemini_server("https://drafter-gemini-proxy.edwinko.workers.dev/")
 
 
 hide_debug_information()
@@ -83,7 +82,7 @@ def send_message(state: State, user_message: str) -> Page:
     user_msg = LLMMessage("user", initialize_prompt + "\n" + user_message)
     state.conversation.append(user_msg)
 
-    result = call_gemini(state.conversation, "AIzaSyAjSRzTfkGD-MGYKHGc_ePx16q2b1lbleg", 'gemini-2.5-flash', 0.7, 7000)
+    result = call_gemini(state.conversation)
 
     # Handle the result
     if isinstance(result, LLMResponse):
@@ -95,7 +94,7 @@ def send_message(state: State, user_message: str) -> Page:
         error_msg = LLMMessage("assistant", f"Error: {result.message}")
         state.conversation.append(error_msg)
         while not isinstance(result, LLMResponse):
-            result = call_gemini(state.conversation, "AIzaSyAjSRzTfkGD-MGYKHGc_ePx16q2b1lbleg")
+            result = call_gemini(state.conversation)
     return show_chat(state)
 
 @route
