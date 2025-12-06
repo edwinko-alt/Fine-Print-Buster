@@ -6,22 +6,20 @@ from drafter.llm import *
 #import requests
 
 set_site_information(
-    author="your_email@udel.edu",
-    description="A brief description of what your website does",
-    sources="List any help resources or sources you used",
-    planning="your_planning_document.pdf",
-    links=["https://github.com/your-username/your-repo"]
+    author="edwinko@udel.edu",
+    description="Breaks down large walls of text in terms and conditions into easy to understand summaries " \
+    "highlighting privacy concerns and red flags.",
+    sources="Google Gemini API", 
+    planning= "",
+    links=["https://github.com/edwinko-alt/Fine-Print-Buster"]
 )
 
-set_gemini_server("https://drafter-gemini-proxy.edwinko.workers.dev/")
+#set_gemini_server("https://drafter-gemini-proxy.edwinko.workers.dev/")
 
 
 hide_debug_information()
-set_website_title("Fine Print Pirate")
+set_website_title("Fine Print Buster")
 set_website_framed(False)
-
-
-
 
 @dataclass
 class State:
@@ -32,8 +30,7 @@ class State:
     :type conversation: List[LLMMessage]
     """
     conversation: list[LLMMessage]
-
-
+    
 @route
 def index(state: State) -> Page:
     """
@@ -46,7 +43,7 @@ def index(state: State) -> Page:
 def show_chat(state: State) -> Page:
     """Display the chat interface with conversation history."""
     content = [
-        f"Chatbot using Gemini",
+        f"Terms and Conditions Analyzer",
         "---"
     ]
 
@@ -64,9 +61,8 @@ def show_chat(state: State) -> Page:
         "Your message:",
         TextArea("user_message", "", rows=3, cols=50),
         LineBreak(),
-        Button("Send", send_message),
-        Button("Clear Conversation", clear_conversation),
-    ])
+        Button("Send", send_message), # type: ignore
+        ]) # type: ignore
 
     return Page(state, content)
 
@@ -75,13 +71,19 @@ def send_message(state: State, user_message: str) -> Page:
     """Send a message to the LLM and get a response."""
     if not user_message.strip():
         return show_chat(state)
-
-    prompt = "You are a Gen Z teen who is a rockstar at roasting company terms and conditions. Respond to the users message in a quirky, relatable way " + user_message
+    
+    clear_conversation(state)
     # Add user message to conversation
-    user_msg = LLMMessage("user", prompt)
+    initialize_prompt = "The user will send in a terms and conditions document. Analyze it for privacy concerns and red flags. Output it" \
+    "in the format: Privacy Rating (1-10): X -> new line -> Red Flags: [list of red flags]. -> new line -> Scenario: <worst case scenario>. Also," \
+    "can you analyze the text and return the response in HTML format? " \
+    "Additionally, please try to be funny and engaging in your analysis, but please get to the point quickly. People want to read" \
+    "short and to the point bullet points. Try to include images if possible"
+
+    user_msg = LLMMessage("user", initialize_prompt + "\n" + user_message)
     state.conversation.append(user_msg)
 
-    result = call_gemini(state.conversation)
+    result = call_gemini(state.conversation, "AIzaSyAjSRzTfkGD-MGYKHGc_ePx16q2b1lbleg", 'gemini-2.5-flash', 0.7, 7000)
 
     # Handle the result
     if isinstance(result, LLMResponse):
@@ -92,7 +94,8 @@ def send_message(state: State, user_message: str) -> Page:
         # Error occurred
         error_msg = LLMMessage("assistant", f"Error: {result.message}")
         state.conversation.append(error_msg)
-        
+        while not isinstance(result, LLMResponse):
+            result = call_gemini(state.conversation, "AIzaSyAjSRzTfkGD-MGYKHGc_ePx16q2b1lbleg")
     return show_chat(state)
 
 @route
