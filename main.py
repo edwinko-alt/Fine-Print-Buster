@@ -82,8 +82,8 @@ def send_message(state: State, user_message: str) -> Page:
     user_msg = LLMMessage("user", initialize_prompt + "\n" + user_message)
     state.conversation.append(user_msg)
 
-    result = call_gemini(state.conversation, max_tokens=15000)
-
+    result = call_gemini(state.conversation,max_tokens=50000)
+    state.conversation.pop()  # Remove the last user message for clarity
     # Handle the result
     if isinstance(result, LLMResponse):
         # Success! Add the response to conversation
@@ -101,5 +101,5 @@ def clear_conversation(state: State) -> Page:
     state.conversation = []
     return show_chat(state)
 
-set_website_style("simple")
+set_website_style("mvp")
 start_server(State([]))
